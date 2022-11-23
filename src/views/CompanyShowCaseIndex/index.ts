@@ -1,0 +1,1 @@
+export { default as CompanyShowcaseIndex } from './CompanyShowCaseIndex.vue'
