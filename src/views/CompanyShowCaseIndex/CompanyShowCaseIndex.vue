@@ -1,12 +1,27 @@
 <template>
-  <div>    
-
+  <div>
     <h4>Company list</h4>
+    <b-row v-if="isAdmin">
+      <b-col offset-lg="8" lg="4" style="text-align: right">
+        <b-button variant="outline-primary" size="sm">
+          <b-icon icon="cloud-download"></b-icon> Download
+        </b-button>
+
+        <b-button 
+          variant="outline-primary" 
+          size="sm" 
+          @click="showModalCreate=true"
+        >
+          <b-icon icon="plus-lg"></b-icon> Add company
+        </b-button>
+      </b-col>
+    </b-row>
+
     <br />
     <!-- Fitlers -->
     <section>
       <!-- User Interface controls -->
-      <b-row>       
+      <b-row>
         <b-col lg="4" class="my-1">
           <b-form-group
             label="Filtro"
@@ -29,7 +44,9 @@
               </b-input-group-append>
 
               <b-input-group-append>
-                <b-button :disabled="!filterText" @click="cleantFilterText">Limpiar</b-button>
+                <b-button :disabled="!filterText" @click="cleantFilterText"
+                  >Limpiar</b-button
+                >
               </b-input-group-append>
             </b-input-group>
           </b-form-group>
@@ -52,12 +69,12 @@
               class="mt-1"
             >
               <b-form-checkbox value="nit">Nit</b-form-checkbox>
-              <b-form-checkbox value="name">Name</b-form-checkbox>              
+              <b-form-checkbox value="name">Name</b-form-checkbox>
             </b-form-checkbox-group>
           </b-form-group>
         </b-col>
 
-         <b-col sm="5" md="4" class="my-1">
+        <b-col sm="5" md="4" class="my-1">
           <b-form-group
             label="Per page"
             label-for="per-page-select"
@@ -92,58 +109,227 @@
 
     <!-- table -->
     <section>
-        <b-table
-            :items="items"
-            :fields="fields"
-            :current-page="currentPage"
-            :per-page="perPage"
-            :filter="filter"
-            :filter-included-fields="filterOn"
-            :sort-by.sync="sortBy"
-            :sort-desc.sync="sortDesc"
-            :sort-direction="sortDirection"
-            stacked="md"
-            show-empty
-            small
-            @filtered="onFiltered"
-            :selectable="true"
-            @row-clicked="rowClicked"
-            >
-            <template #cell(name)="row">
-                {{ row.value }}
-            </template>
+      <b-table
+        :items="items"
+        :fields="fields"
+        :current-page="currentPage"
+        :per-page="perPage"
+        :filter="filter"
+        :filter-included-fields="filterOn"
+        :sort-by.sync="sortBy"
+        :sort-desc.sync="sortDesc"
+        :sort-direction="sortDirection"
+        stacked="md"
+        show-empty
+        small
+        @filtered="onFiltered"
+        :selectable="true"
+        @row-clicked="rowClicked"
+      >
+        <template #cell(name)="row">
+          {{ row.value }}
+        </template>
 
-            <!-- <template #cell(actions)="row">
-                <b-button size="sm" @click="rowClicked(row.item, row.index, $event.target)" class="mr-1">Registrar pago</b-button>
-                <b-button
-                size="sm"
-                @click="row.toggleDetails"
-                >{{ row.detailsShowing ? 'Ocultar' : 'Ver' }} Detalle</b-button>
-            </template>
+        <template #cell(actions)="row">
+          <b-button
+            variant="outline-danger"
+            size="sm"
+            v-if="isAdmin"
+            @click="deleteItem(row.item, row.index, $event.target)"
+          >
+            <b-icon icon="x-circle"></b-icon>
+          </b-button>
 
-            <template #row-details="row">
-                <b-card>
-                <b-row>                    
-                    <b-col lg="12" md="12">
-                        <div>
-                            <strong>Id:</strong>
-                            {{ row.item.id }}
-                        </div>
-                        <div>
-                            <strong>Dirección:</strong>
-                            {{ row.item.address }}
-                        </div>
-                        <div>
-                            <strong>Celular:</strong>
-                            {{ row.item.phone }}
-                        </div>
-                    </b-col>
-                </b-row>
-                </b-card>
-            </template> -->
-        </b-table>
+          <b-button
+            variant="outline-primary"
+            size="sm"
+            v-if="isAdmin"
+            @click="editItem(row.item, row.index, $event.target)"
+          >
+            <b-icon icon="pencil"></b-icon>
+          </b-button>
+        </template>
+      </b-table>
     </section>
 
+    <!-- edit -->
+    <section v-if="companySelected != null">
+      <b-modal
+        title="Edit company"
+        v-model="showModalEdit"
+        no-close-on-backdrop
+        hide-header-close
+        size="md"
+      >
+        <div>
+          <b-row>
+            <b-col lg="12">
+              <strong>Nit:</strong> {{companySelected.nit}}
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="input-group-1"
+                label="Name:"
+                label-for="input-1"
+              >
+                <b-form-input
+                  id="input-1"
+                  v-model="companySelected.name"
+                  type="text"
+                  placeholder="update name"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="input-group-1"
+                label="Address:"
+                label-for="input-1"
+              >
+                <b-form-input
+                  id="input-1"
+                  v-model="companySelected.address"
+                  type="text"
+                  placeholder="update address"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="input-group-1"
+                label="Phone:"
+                label-for="input-1"
+              >
+                <b-form-input
+                  id="input-1"
+                  v-model="companySelected.phone"
+                  type="text"
+                  placeholder="update phone"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+          </b-row>
+        </div>
+        <template #modal-footer>
+          <div class="w-100">
+            <b-row>
+              <b-col lg="6">
+                <b-button size="md" variant="danger" @click="closeModal('edit')">
+                  Cancelar
+                </b-button>
+              </b-col>
+              <b-col lg="6">
+                <b-button size="md" variant="warning" @click="submitEdit()">
+                  Editar
+                </b-button>
+              </b-col>
+            </b-row>
+          </div>
+        </template>
+      </b-modal>
+    </section>
+
+    <!-- create -->
+    <section>
+      <b-modal
+        title="Create company"
+        v-model="showModalCreate"
+        no-close-on-backdrop
+        hide-header-close        
+        size="md"
+        header-bg-variant="light"
+      >
+        <div>
+          <b-row>           
+            <b-col lg="12">
+              <b-form-group
+                id="new-input-group-nit"
+                label="Nit:"
+                label-for="input-nit"
+              >
+                <b-form-input
+                  id="input-nit"
+                  v-model="newCompany.nit"
+                  type="text"
+                  placeholder="Insert nit"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="new-input-group-name"
+                label="Name:"
+                label-for="input-name"
+              >
+                <b-form-input
+                  id="input-name"
+                  v-model="newCompany.name"
+                  type="text"
+                  placeholder="Insert name"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="new-input-group-address"
+                label="Address:"
+                label-for="input-address"
+              >
+                <b-form-input
+                  id="input-address"
+                  v-model="newCompany.address"
+                  type="text"
+                  placeholder="Insert address"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+
+            <b-col lg="12">
+              <b-form-group
+                id="new-input-group-phone"
+                label="Phone:"
+                label-for="input-phone"
+              >
+                <b-form-input
+                  id="input-phone"
+                  v-model="newCompany.phone"
+                  type="text"
+                  placeholder="update phone"
+                  required
+                ></b-form-input>
+              </b-form-group>
+            </b-col>
+          </b-row>
+        </div>
+        <template #modal-footer>
+          <div class="w-100">
+            <b-row>
+              <b-col lg="6">
+                <b-button size="md" variant="danger" @click="closeModal('create')">
+                  Cancelar
+                </b-button>
+              </b-col>
+              <b-col lg="6">
+                <b-button size="md" variant="warning" @click="submitCreate()">
+                  Crear
+                </b-button>
+              </b-col>
+            </b-row>
+          </div>
+        </template>
+      </b-modal>
+    </section>
   </div>
 </template>
 
@@ -182,6 +368,17 @@ export default Vue.extend({
       filter: null,
       filterText: null,
       filterOn: [],
+      isAdmin: false,
+      companySelected: null,
+      showModalEdit: false,
+      showModalCreate: false,
+      token: '',
+      newCompany: {
+        nit: null,
+        name: null,
+        address: null,
+        phone: null
+      }
     };
   },
   computed: {
@@ -202,18 +399,24 @@ export default Vue.extend({
     if (!this.$store.getters.isAuthenticated) {
       this.$router.replace("/pages/login");
     } else {
+      this.token = this.$store.getters.user.token;
       this.fetchCompanies();
     }
   },
   methods: {
     fetchCompanies() {
       this.isFetching = true;
-      const token = this.$store.getters.user.token;
+      const flag = this.$store.getters.user.isAdmin;
+      if (flag === "true" || flag === true) {
+        this.isAdmin = true;
+      } else {
+        this.isAdmin = false;
+      }
+
       companyApi
-        .fetch(token)
+        .fetch(this.token)
         .then((companies) => {
           this.items = companies;
-
           this.isFetching = false;
         })
         .catch((e) => {
@@ -227,15 +430,65 @@ export default Vue.extend({
       this.currentPage = 1;
     },
     rowClicked(item: any) {
-      console.log('item clicked: ', item)
+      console.log("item clicked: ", item);
     },
-    setFilterText(){
-      this.filter = this.filterText
+    deleteItem(item: any) {
+      console.log("item to delte: ", item);
+
+      companyApi
+        .del(this.token, item.nit)
+        .then((response) => {
+          this.fetchCompanies();
+        })
+        .catch((e) => {
+          console.error;
+        });
     },
-    cleantFilterText(){
-      this.filter = null
-      this.filterText = null
-    }
+    editItem(item: any) {
+      this.companySelected = {...item};
+      this.showModalEdit = true;
+    },
+    submitEdit() {
+      companyApi
+        .update(this.companySelected, this.token)
+        .then((response) => {
+          console.log('update response: ', response)
+          this.showModalEdit = false
+          alert('Edition completed successfully')
+          this.fetchCompanies()
+        })
+        .catch((e) => {
+          console.error
+        })
+    },
+    submitCreate() {
+      companyApi
+        .create(this.newCompany, this.token)
+        .then((response) => {
+          console.log('new response: ', response)
+          this.showModalCreate = false
+          alert('Company created successfully')
+          this.fetchCompanies()
+        })
+        .catch((e) => {
+          alert(e)
+        })
+    },
+    setFilterText() {
+      this.filter = this.filterText;
+    },
+    cleantFilterText() {
+      this.filter = null;
+      this.filterText = null;
+    },
+    closeModal(modalName: string) {
+
+      if (modalName === 'edit') {
+        this.showModalEdit = false;
+      } else if (modalName === 'create') {
+        this.showModalCreate = false
+      }
+    },
   },
 });
 </script>

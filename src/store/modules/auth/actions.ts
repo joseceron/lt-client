@@ -32,13 +32,14 @@ export default {
         password: payload.password,
       })
       .then((res) => {
-        const { id, email, token } = res.data;
+        const { id, email, token, isAdmin } = res.data;
 
         localStorage.setItem("id", id);
         localStorage.setItem("token", token);
         localStorage.setItem("email", email);
+        localStorage.setItem("isAdmin", isAdmin);
 
-        context.commit("setUser", { id, token, email });
+        context.commit("setUser", { id, token, email, isAdmin });
       })
       .catch((e) => {
         throw setErr(e, "Fail to login");
@@ -48,9 +49,10 @@ export default {
     const id = localStorage.getItem("id");
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
+    const isAdmin = localStorage.getItem("isAdmin");
 
-    if (id && token && email) {
-      context.commit("setUser", { id, email, token });
+    if (id && token && email && isAdmin) {
+      context.commit("setUser", { id, email, token, isAdmin });
     }
   },
   logout(context: any) {
@@ -65,6 +67,7 @@ export default {
       localStorage.removeItem("id")
       localStorage.removeItem("token")
       localStorage.removeItem("email")
+      localStorage.removeItem("isAdmin")
       context.commit("setUser", null)
     }).catch((e) => {
         throw setErr(e, "Fail to logout");
