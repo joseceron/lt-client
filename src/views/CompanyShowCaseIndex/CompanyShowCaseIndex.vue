@@ -3,7 +3,7 @@
     <h4>Company list</h4>
     <b-row v-if="isAdmin">
       <b-col offset-lg="8" lg="4" style="text-align: right">
-        <b-button variant="outline-primary" size="sm">
+        <b-button variant="outline-primary" size="sm" @click="downloadPDF()">
           <b-icon icon="cloud-download"></b-icon> Download
         </b-button>
 
@@ -337,6 +337,7 @@
 import Vue from "vue";
 import { companyApi } from "@/api/company-api";
 import type { Company } from "@/models/company";
+import { jsPDF } from "jspdf"
 
 export default Vue.extend({
   name: "CompanyShowCaseIndex",
@@ -489,6 +490,30 @@ export default Vue.extend({
         this.showModalCreate = false
       }
     },
+    downloadPDF(){
+      var headers = this.createHeaders([
+        "nit",
+        "name",
+        "address",
+        "phone",
+      ]);
+
+      var doc = new jsPDF({ putOnlyUsedFonts: true, orientation: "portrait" });
+      doc.table(1, 1, this.items, headers, { autoSize: true });
+      doc.save("companies.pdf");
+    },
+    createHeaders(keys: any) {
+      var result = [];
+      for (var i = 0; i < keys.length; i += 1) {
+        result.push({
+          nit: keys[i],
+          name: keys[i],
+          address: keys[i],
+          phone: keys[i],
+        });
+      }
+      return result;
+    }
   },
 });
 </script>
